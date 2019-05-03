@@ -1,14 +1,18 @@
 TITLE ="final_game"
-WIDTH = 600 # width of game window
+WIDTH = 1000 # width of game window
 HEIGHT = 480 # height of screen
 FPS = 60 # frames
 FONT_NAME = 'arial'
 
-#player proppeties
+#player properties
 PLAYER_ACC = 0.5
 PLAYER_FRICTION= -0.12
 PLAYER_GRAV=0.8
 PLAYER_JUMP = 13
+
+#bullet properties
+LIGHNING_SPEED = 5
+LIGHNING_DURATION = 45
 
 
 PLAYER_LAYER = 2
@@ -19,7 +23,17 @@ PLATFORM_LIST1=[(0,HEIGHT-50),
                (250,400),
                (400,380),
                (550, 330),
-               (700,440)]
+               (700,440),
+               (950, 440),
+               (1150, 400),
+               (1300, 380),
+               (1450, 330),
+               (1700, 330),
+               (1800, 400),
+               (1950,400),
+               (2100,380),
+               (2350, 330),
+               (2600,440)]
 
 #COLORS (R,G,B)
 BLACK = (0, 0, 0)

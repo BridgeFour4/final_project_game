@@ -33,6 +33,7 @@ class Game:
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.platforms =pg.sprite.Group()
         self.backboard= pg.sprite.Group()
+        self.projectiles= pg.sprite.Group()
         #self.powerups = pg.sprite.Group()
         #self.mobs = pg.sprite.Group()
         self.player = Player(self)
@@ -78,7 +79,7 @@ class Game:
             self.player.vel.x = 0
 
         # if player reaches right side of screen scroll over the screen
-        if self.player.rect.right > WIDTH*5/6:
+        if self.player.rect.right > WIDTH/4:
             self.player.pos.x -=max(abs(self.player.vel.x), 2)
             self.backwall.rect.x -= max(abs(self.player.vel.x), 2)
             #for mob in self.mobs:
@@ -132,8 +133,8 @@ class Game:
             if event.type == pg.KEYDOWN:
                if event.key == pg.K_UP:
                    self.player.jump()
-            #   if event.key == pg.K_SPACE:
-            #      self.player.shoot()
+               if event.key == pg.K_SPACE:
+                  self.player.shoot()
 
     def draw(self):
         #game loop draw
@@ -150,7 +151,7 @@ class Game:
         #pg.mixer.music.play(loops=-1)
         self.screen.fill(BGCOLOR)
         self.draw_text(TITLE,48,WHITE,WIDTH/2,HEIGHT/4)
-        self.draw_text("Arrows to move space to jump ",22,WHITE,WIDTH/2,HEIGHT/2)
+        self.draw_text("arrows to move and jump space to shoot a teleport ",22,WHITE,WIDTH/2,HEIGHT/2)
         self.draw_text('press a key to start',22,WHITE,WIDTH/2, HEIGHT*3/4 )
         #self.draw_text('High Score: '+str(self.highscore), 22, WHITE, WIDTH / 2,15)
         pg.display.flip()

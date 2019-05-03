@@ -56,7 +56,11 @@ class Player(pg.sprite.Sprite):
             self.vel.y = -PLAYER_JUMP
 
     def shoot(self):
-        pass
+        Lightning(self.game,self)
+
+    def teleport(self,x,y):
+        self.pos.x = x
+        self.pos.y = y
 
 class Platform(pg.sprite.Sprite):
     def __init__(self,game,x,y):
@@ -92,3 +96,24 @@ class Backwall(pg.sprite.Sprite):
         #    Pow(self.game,self)
         #if randrange(100) < MOB_SPAWN:
         #    Pow(self.game,self)
+
+class Lightning(pg.sprite.Sprite):
+    def __init__(self,game,player):
+        self.layer = PLAYER_LAYER
+        self.groups = game.all_sprites, game.projectiles
+        pg.sprite.Sprite.__init__(self,self.groups)
+        self.game = game
+        self.player = player
+        self.image = pg.Surface((10,10))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.x = self.player.rect.x
+        self.rect.y = self.player.rect.y
+        self.dx = LIGHNING_SPEED
+        self.spawn_time = 0
+    def update(self):
+        self.rect.x+=self.dx
+        self.spawn_time+=1
+        if self.spawn_time>=LIGHNING_DURATION:
+            self.player.teleport(self.rect.x,self.rect.y)
+            self.kill()
