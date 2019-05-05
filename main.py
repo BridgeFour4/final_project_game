@@ -14,7 +14,8 @@ class Game:
         self.clock = pg.time.Clock()
         self.running = True
         self.font_name = pg.font.match_font(FONT_NAME)
-        self.map = 1
+        self.map = 0
+        self.first_hit = 0
         self.load_data()
 
     def load_data(self):
@@ -31,17 +32,31 @@ class Game:
         self.score = 0
         self.lives = 3
         self.all_sprites = pg.sprite.LayeredUpdates()
-        self.platforms =pg.sprite.Group()
+        self.platforms = pg.sprite.Group()
         self.backboard= pg.sprite.Group()
         self.projectiles= pg.sprite.Group()
+        self.endpoints = pg.sprite.Group()
         #self.powerups = pg.sprite.Group()
         #self.mobs = pg.sprite.Group()
-        self.player = Player(self)
-        self.backwall = Backwall(self,-100,0)
-        for plat in PLATFORM_LIST1:
-            Platform(self, *plat)
-        #pg.mixer.music.load(path.join(self.snd_dir,''))
+        self.board(self.map)
         self.run()
+
+
+    def board(self,run):
+        self.first_hit = 0
+        self.player = Player(self)
+        self.backwall = Backwall(self, -200, 0)
+        if run ==0:
+            for plat in PLATFORM_LIST1:
+                Platform(self, *plat)
+        if run == 1:
+            for plat in PLATFORM_LIST2:
+                Platform(self, *plat)
+        if run ==2:
+            self.show_win_screen()
+            self.running = False
+        # pg.mixer.music.load(path.join(self.snd_dir,''))
+        self.endpoint = Endpoint(self, *ENDPOINT_LIST[run])
 
     def run(self):
         #pg.mixer.music.play(loops=-1)
@@ -70,6 +85,7 @@ class Game:
                 if self.player.pos.y<hits[0]. rect.bottom:
                     self.player.pos.y = hits[0].rect.top
                     self.player.vel.y = 0
+                    self.player.jump_check=0
                     self.player.jumping = False
 
         #checks to see if hitting backboard
@@ -78,10 +94,21 @@ class Game:
             self.player.rect.left = hits[0].rect.right
             self.player.vel.x = 0
 
+        hits = pg.sprite.spritecollide(self.player,self.endpoints,False)
+        if hits:
+            self.map+=1
+            self.player.kill()
+            self.backwall.kill()
+            self.endpoint.kill()
+            for plat in self.platforms:
+                plat.kill()
+            self.board(self.map)
+
         # if player reaches right side of screen scroll over the screen
         if self.player.rect.right > WIDTH/4:
             self.player.pos.x -=max(abs(self.player.vel.x), 2)
             self.backwall.rect.x -= max(abs(self.player.vel.x), 2)
+            self.endpoint.rect.x -=max(abs(self.player.vel.x),2)
             #for mob in self.mobs:
             #    mob.rect.y +=max(abs(self.player.vel.y),2)
             for plat in self.platforms:
@@ -93,6 +120,7 @@ class Game:
         if self.player.rect.right < WIDTH/6:
             self.player.pos.x +=max(abs(self.player.vel.x), 2)
             self.backwall.rect.x += max(abs(self.player.vel.x), 2)
+            self.endpoint.rect.x += max(abs(self.player.vel.x), 2)
             #for mob in self.mobs:
             #    mob.rect.y +=max(abs(self.player.vel.y),2)
             for plat in self.platforms:
@@ -109,11 +137,17 @@ class Game:
 
         # if we fall off the bottom
         if self.player.rect.bottom >HEIGHT:
-            for sprite in self.all_sprites:
-                sprite.rect.y-=max(self.player.vel.y,10)
-                if sprite.rect.bottom<0:
-                    sprite.kill()
-            self.playing=False
+            if self.first_hit==0:
+                self.lives -= 1
+            if self.lives >= 0:
+                self.player.kill()
+                self.backwall.kill()
+                self.endpoint.kill()
+                for plat in self.platforms:
+                    plat.kill()
+                self.board(self.map)
+            else:
+                self.playing=False
 
         #spawn new platforms to keep some aveerage number
         #while len(self.platforms)<6:
@@ -134,7 +168,7 @@ class Game:
                if event.key == pg.K_UP:
                    self.player.jump()
                if event.key == pg.K_SPACE:
-                  self.player.shoot()
+                   self.player.shoot()
 
     def draw(self):
         #game loop draw
@@ -162,11 +196,31 @@ class Game:
         # game over screen
         #pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
         #pg.mixer.music.play(loops=-1)
-        if not self.running:
+        self.map = 0
+        if not self.running or self.map ==2:
             return
         self.screen.fill(BGCOLOR)
         self.draw_text("GAME OVER", 48, RED, WIDTH / 2, HEIGHT / 4)
         self.draw_text("Score: "+ str(self.score), 22, RED, WIDTH / 2, HEIGHT / 2)
+        self.draw_text('press a key to play again', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
+        #if self.score > self.highscore:
+        #   self.highscore= self.score
+        #    self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
+        #    with open(path.join(self.dir,HS_FILE),'w')as f:
+        #        f.write(str(self.highscore))
+        #else:
+        #    self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
+        pg.display.flip()
+        self.wait_for_key()
+        #pg.mixer.music.fadeout(500)
+
+    def show_win_screen(self):
+        # game over screen
+        #pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
+        #pg.mixer.music.play(loops=-1)
+        self.screen.fill(BGCOLOR)
+        self.draw_text("Congratualtion You Won", 48, RED, WIDTH / 2, HEIGHT / 4)
+        self.draw_text(" Your Score was: "+ str(self.score), 22, RED, WIDTH / 2, HEIGHT / 2)
         self.draw_text('press a key to play again', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
         #if self.score > self.highscore:
         #   self.highscore= self.score
@@ -188,6 +242,8 @@ class Game:
                     waiting = False
                     self.running = False
                 if event.type == pg.KEYUP:
+                    if event.key==pg.K_2:
+                        self.map=1
                     waiting = False
 
 

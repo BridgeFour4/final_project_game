@@ -86,7 +86,7 @@ class Backwall(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.backboard
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((100,480))
+        self.image = pg.Surface((200,480))
         self.image.fill(RED)
         #self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
@@ -117,3 +117,16 @@ class Lightning(pg.sprite.Sprite):
         if self.spawn_time>=LIGHNING_DURATION:
             self.player.teleport(self.rect.x,self.rect.y)
             self.kill()
+
+
+class Endpoint(pg.sprite.Sprite):
+    def __init__(self,game,x,y):
+        self.layer = PLATFORM_LAYER
+        self.groups = game.all_sprites, game.endpoints
+        pg.sprite.Sprite.__init__(self,self.groups)
+        self.game = game
+        self.image = pg.Surface((50, 50))
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
