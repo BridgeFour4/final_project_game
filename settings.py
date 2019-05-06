@@ -17,33 +17,38 @@ LIGHNING_DURATION = 45
 
 PLAYER_LAYER = 2
 PLATFORM_LAYER = 1
+
+#Spawns
+MOB_SPAWN = 1
+LIFE_SPAWN = 2
+POINT_SPAWN = 3
 #platform lists
 PLATFORM_LIST1=[(0,HEIGHT-50),
                 (100, 400),
-                (250, 400),
-                (400, 380),
-                (550, 330),
+                (250, 400,MOB_SPAWN),
+                (400, 380,),
+                (550, 330,LIFE_SPAWN),
                 (700, 440),
                 (950, 440),
-                (1150, 400),
-                (1300, 380),
+                (1150, 400,POINT_SPAWN),
+                (1300, 380,POINT_SPAWN),
                 (1450, 330),
-                (1700, 330),
+                (1700, 330,MOB_SPAWN),
                 (1800, 400),
-                (1950, 400),
+                (1950, 400,MOB_SPAWN),
                 (2100, 380),
                 (2350, 330),
-                (2600, 440),
+                (2600, 440,LIFE_SPAWN),
                 (2800, 440),
                 (3000, 400),
-                (3300, 380),
-                (3450, 330),
-                (3600, 330),
-                (3750, 400),
+                (3300, 380,POINT_SPAWN),
+                (3450, 330,POINT_SPAWN),
+                (3600, 330,POINT_SPAWN),
+                (3750, 400,POINT_SPAWN),
                 (4000, 400),
-                (4300, 380),
+                (4300, 380,MOB_SPAWN),
                 (4600, 330),
-                (4800, 440)]
+                (4800, 440,LIFE_SPAWN)]
 
 PLATFORM_LIST2=[(0,HEIGHT-50),
                 (200, 400),
@@ -83,6 +88,9 @@ PLATFORM_LIST2=[(0,HEIGHT-50),
 
 ENDPOINT_LIST = [(5000,380),
                  (7500,380)]
+
+
+
 
 #COLORS (R,G,B)
 BLACK = (0, 0, 0)

@@ -22,6 +22,7 @@ class Player(pg.sprite.Sprite):
         self.pos = vec(40, HEIGHT-100)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
+        self.hit =0
 
     def update(self):
         self.acc = vec(0, PLAYER_GRAV)
@@ -46,6 +47,9 @@ class Player(pg.sprite.Sprite):
 
         self.rect.midbottom = self.pos
 
+        if self.hit >0:
+            self.hit -=1
+
     def jump(self):
         # jump only if standing on platform
         self.rect.x += 2
@@ -62,8 +66,11 @@ class Player(pg.sprite.Sprite):
         self.pos.x = x
         self.pos.y = y
 
+    def hurt(self):
+         self.hit =5*FPS
+
 class Platform(pg.sprite.Sprite):
-    def __init__(self,game,x,y):
+    def __init__(self,game,x,y,spawn=0):
         self._layer = PLATFORM_LAYER
         self.groups = game.all_sprites, game.platforms
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -74,10 +81,12 @@ class Platform(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        #if randrange(100) < POW_SPAWN:
-        #    Pow(self.game,self)
-        #if randrange(100) < MOB_SPAWN:
-        #    Pow(self.game,self)
+        if spawn == LIFE_SPAWN:
+            Pow(self.game,self,LIFE_SPAWN)
+        if spawn == POINT_SPAWN:
+            Pow(self.game,self,POINT_SPAWN)
+        if spawn ==MOB_SPAWN:
+            Mob(self.game,self)
 
 
 class Backwall(pg.sprite.Sprite):
@@ -130,3 +139,47 @@ class Endpoint(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
+
+class Mob(pg.sprite.Sprite):
+
+    def __init__(self,game,plat):
+        self.layer = PLAYER_LAYER
+        self.groups = game.all_sprites, game.mobs
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.plat = plat
+        self.image = pg.Surface((30,30))
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.rect.x = self.plat.rect.left + ((self.plat.rect.right-self.plat.rect.left)/2)
+        self.rect.bottom = self.plat.rect.top
+        self.dx = 2
+
+    def update(self):
+        self.rect.x += self.dx
+        if self.rect.right== self.plat.rect.right:
+            self.dx = -self.dx
+
+        elif self.rect.left == self.plat.rect.left:
+            self.dx = -self.dx
+
+class Pow(pg.sprite.Sprite):
+
+    def __init__(self,game,plat,type):
+        self.layer = PLAYER_LAYER
+        self.groups = game.all_sprites, game.powerups
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.plat = plat
+        self.type = type
+        if self.type == LIFE_SPAWN:
+            self.image = pg.Surface((20,20))
+            self.image.fill(BLUE)
+        elif self.type == POINT_SPAWN:
+            self.image = pg.Surface((10,10))
+            self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.x = self.plat.rect.left + ((self.plat.rect.right - self.plat.rect.left) / 2)
+        self.rect.bottom = self.plat.rect.top
+

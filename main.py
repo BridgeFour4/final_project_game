@@ -36,8 +36,8 @@ class Game:
         self.backboard= pg.sprite.Group()
         self.projectiles= pg.sprite.Group()
         self.endpoints = pg.sprite.Group()
-        #self.powerups = pg.sprite.Group()
-        #self.mobs = pg.sprite.Group()
+        self.powerups = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
         self.board(self.map)
         self.run()
 
@@ -94,41 +94,65 @@ class Game:
             self.player.rect.left = hits[0].rect.right
             self.player.vel.x = 0
 
+        # checks to see if hit endpoint
         hits = pg.sprite.spritecollide(self.player,self.endpoints,False)
         if hits:
+            if self.lives >=3:
+                self.score+=1000
             self.map+=1
             self.player.kill()
             self.backwall.kill()
             self.endpoint.kill()
+            for bullet in self.projectiles:
+                bullet.kill()
+            for mob in self.mobs:
+                mob.kill()
             for plat in self.platforms:
                 plat.kill()
             self.board(self.map)
+
+        # check to see if projectile hits mob and kills the mob but not the bullet
+        hits=pg.sprite.groupcollide(self.projectiles,self.mobs,False,True)
+        for hit in hits:
+            self.score+=10
+
+         #check to see if the player hits the mob and from what direction
+        hits = pg.sprite.spritecollide(self.player, self.mobs,False)
+        for hit in hits:
+
+            if self.player.rect.bottom <= (hit.rect.top+(hit.rect.bottom-hit.rect.top)/8):
+                hit.kill()
+                self.score+=10
+            elif self.player.rect.bottom > hit.rect.center[1] and self.player.hit ==0:
+                self.lives-=1
+                self.player.hurt()
+
+            if self.lives<0:
+                self.playing = False
+
+        hits = pg.sprite.spritecollide(self.player,self.powerups,True)
+        for hit in hits:
+            if hit.type ==LIFE_SPAWN:
+                self.lives+=1
+                if self.lives >5:
+                    self.lives =5
+            if hit.type == POINT_SPAWN:
+                self.score+=100
+
 
         # if player reaches right side of screen scroll over the screen
         if self.player.rect.right > WIDTH/4:
             self.player.pos.x -=max(abs(self.player.vel.x), 2)
             self.backwall.rect.x -= max(abs(self.player.vel.x), 2)
             self.endpoint.rect.x -=max(abs(self.player.vel.x),2)
-            #for mob in self.mobs:
-            #    mob.rect.y +=max(abs(self.player.vel.y),2)
+            for powerup in self.powerups:
+                powerup.rect.x-=max(abs(self.player.vel.x),2)
+            for bullet in self.projectiles:
+                bullet.rect.x -=max(abs(self.player.vel.x),2)
+            for mob in self.mobs:
+                mob.rect.x -=max(abs(self.player.vel.x),2)
             for plat in self.platforms:
                 plat.rect.x -=max(abs(self.player.vel.x),2)
-                #come back to this part later to look at it
-                if plat.rect.top>=HEIGHT:
-                    plat.kill()
-                    self.score+=10
-        if self.player.rect.right < WIDTH/6:
-            self.player.pos.x +=max(abs(self.player.vel.x), 2)
-            self.backwall.rect.x += max(abs(self.player.vel.x), 2)
-            self.endpoint.rect.x += max(abs(self.player.vel.x), 2)
-            #for mob in self.mobs:
-            #    mob.rect.y +=max(abs(self.player.vel.y),2)
-            for plat in self.platforms:
-                plat.rect.x +=max(abs(self.player.vel.x),2)
-                #come back to this part later to look at it
-                if plat.rect.top>=HEIGHT:
-                    plat.kill()
-                    self.score+=10
 
         # if player hits powerup
         #pow_hits = pg.sprite.spritecollide(self.player,self.powerups,True)
@@ -143,6 +167,10 @@ class Game:
                 self.player.kill()
                 self.backwall.kill()
                 self.endpoint.kill()
+                for bullet in self.projectiles:
+                    bullet.kill()
+                for mob in self.mobs:
+                    mob.kill()
                 for plat in self.platforms:
                     plat.kill()
                 self.board(self.map)
