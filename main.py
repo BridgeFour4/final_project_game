@@ -1,8 +1,13 @@
+# happy flute by Tomasz Kucza / magory.games / based on piermic's Improvisation with Sopranino recorder
+#Yippee by http://opengameart.org/users/snabisk
+
 import pygame as pg
 import random
 from settings import *
 from sprites import *
 from os import path
+
+
 
 class Game:
     def __init__(self):
@@ -23,12 +28,25 @@ class Game:
         img_dir = path.join(self.dir, 'img')
         self.snd_dir = path.join(self.dir, 'snd')
         # load high score
+        with open(path.join(self.dir, HS_FILE), "r") as f:
+            try:
+                self.highscore = int(f.read())
+            except:
+                self.highscore = 0
         # load sritesheet
         # load_sound
+        self.jumpsound = pg.mixer.Sound(path.join(self.snd_dir, 'Jump.wav'))
+        self.coinsound = pg.mixer.Sound(path.join(self.snd_dir, 'Coin.wav'))
+        self.hurtsound = pg.mixer.Sound(path.join(self.snd_dir, 'Hurt.wav'))
+        self.lifesound = pg.mixer.Sound(path.join(self.snd_dir, 'Life.wav'))
+        self.shootsound = pg.mixer.Sound(path.join(self.snd_dir, 'Shoot.wav'))
+        self.levelsound = pg.mixer.Sound(path.join(self.snd_dir, 'LevelChange.wav'))
+
 
 
     def new(self):
         # starts game again resets values
+        pg.mixer.music.load(path.join(self.snd_dir, 'tkucza-happyflutes.ogg'))
         self.score = 0
         self.lives = 3
         self.all_sprites = pg.sprite.LayeredUpdates()
@@ -44,38 +62,34 @@ class Game:
     def board(self,run):
         self.first_hit = 0
         self.player = Player(self)
-        self.backwall = Backwall(self, -200, 0)
         if run == 0:
             for plat in PLATFORM_LIST1:
                 Platform(self, *plat)
+                self.endpoint = Endpoint(self, *ENDPOINT_LIST[run])
         if run == 1:
             for plat in PLATFORM_LIST2:
                 Platform(self, *plat)
-        if run == 2:
+                self.endpoint = Endpoint(self, *ENDPOINT_LIST[run])
+        if run >=len(ENDPOINT_LIST):
             self.show_win_screen()
-            self.running = False
-        # pg.mixer.music.load(path.join(self.snd_dir,''))
-        self.endpoint = Endpoint(self, *ENDPOINT_LIST[run])
+            self.playing = False
+
+
 
     def run(self):
-        # pg.mixer.music.play(loops=-1)
+        pg.mixer.music.play(loops=-1)
         self.playing = True
         while self.playing:
             self.clock.tick(FPS)
             self.events()
             self.update()
             self.draw()
-        # pg.mixer.music.fadeout(500)
+        pg.mixer.music.fadeout(500)
 
 
     def update(self):
         # game loop update
         self.all_sprites.update()
-
-        # hit mobs
-        # mob_hits = pg.sprite.spritecollide(self.player,self.mobs,False, pg.sprite.collide_mask )
-        # if mob_hits:
-        #    self.playing = False
 
         # check if player hits platform only if falling
         if self.player.vel.y>0:
@@ -96,19 +110,12 @@ class Game:
         # checks to see if hit endpoint
         hits = pg.sprite.spritecollide(self.player,self.endpoints,False)
         if hits:
+            self.levelsound.play()
             if self.lives >=3:
                 self.score+=1000
             self.map+=1
-            self.player.kill()
-            self.backwall.kill()
-            self.endpoint.kill()
-            for bullet in self.projectiles:
-                bullet.kill()
-            for mob in self.mobs:
-                mob.kill()
-            for plat in self.platforms:
-                plat.kill()
-            self.board(self.map)
+            self.reset()
+
 
         # check to see if projectile hits mob and kills the mob but not the bullet
         hits=pg.sprite.groupcollide(self.projectiles,self.mobs,False,True)
@@ -129,20 +136,22 @@ class Game:
             if self.lives<0:
                 self.playing = False
 
+        #checks to see if player hit powerup and what type
         hits = pg.sprite.spritecollide(self.player,self.powerups,True)
         for hit in hits:
             if hit.type ==LIFE_SPAWN:
+                self.lifesound.play()
                 self.lives+=1
                 if self.lives >5:
                     self.lives =5
             if hit.type == POINT_SPAWN:
+                self.coinsound.play()
                 self.score+=100
 
 
         # if player reaches right side of screen scroll over the screen
         if self.player.rect.right > WIDTH/4:
             self.player.pos.x -= max(abs(self.player.vel.x), 2)
-            self.backwall.rect.x -= max(abs(self.player.vel.x), 2)
             self.endpoint.rect.x -=max(abs(self.player.vel.x),2)
             for powerup in self.powerups:
                 powerup.rect.x-=max(abs(self.player.vel.x),2)
@@ -158,24 +167,10 @@ class Game:
             if self.first_hit == 0:
                 self.lives -= 1
             if self.lives >= 0:
-                self.player.kill()
-                self.backwall.kill()
-                self.endpoint.kill()
-                for bullet in self.projectiles:
-                    bullet.kill()
-                for mob in self.mobs:
-                    mob.kill()
-                for plat in self.platforms:
-                    plat.kill()
-                self.board(self.map)
+                self.reset()
             else:
                 self.playing=False
 
-        # spawn new platforms to keep some aveerage number
-        # while len(self.platforms)<6:
-        #    width = random.randrange(30,85)
-        #    Platform(self,random.randrange(0,WIDTH - width),
-        #                 random.randrange(-75,-30))
 
     def events(self):
         # game loop events
@@ -203,57 +198,64 @@ class Game:
 
     def show_start_screen(self):
         # start screen
-        # pg.mixer.music.load(path.join(self.snd_dir, ''))
-        # pg.mixer.music.play(loops=-1)
+        pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
+        pg.mixer.music.play(loops=-1)
         self.screen.fill(BGCOLOR)
         self.draw_text(TITLE,48,WHITE,WIDTH/2,HEIGHT/4)
         self.draw_text("arrows to move and jump space to shoot a teleport ",22,WHITE,WIDTH/2,HEIGHT/2)
         self.draw_text('press a key to start',22,WHITE,WIDTH/2, HEIGHT*3/4 )
-        # self.draw_text('High Score: '+str(self.highscore), 22, WHITE, WIDTH / 2,15)
+        self.draw_text('High Score: '+str(self.highscore), 22, WHITE, WIDTH / 2,15)
         pg.display.flip()
         self.wait_for_key()
-        # pg.mixer.music.fadeout(500)
+        pg.mixer.music.fadeout(500)
 
     def show_go_screen(self):
         # game over screen
-        # pg.mixer.music.load(path.join(self.snd_dir, ''))
-        # pg.mixer.music.play(loops=-1)
-        self.map = 0
-        if not self.running or self.map == 2:
+        pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
+        pg.mixer.music.play(loops=-1)
+        if not self.running or self.map >=len(ENDPOINT_LIST):
+            self.map=0
             return
+        self.map = 0
         self.screen.fill(BGCOLOR)
         self.draw_text("GAME OVER", 48, RED, WIDTH / 2, HEIGHT / 4)
         self.draw_text("Score: " + str(self.score), 22, RED, WIDTH / 2, HEIGHT / 2)
         self.draw_text('press a key to play again', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
-        # if self.score > self.highscore:
-        #   self.highscore= self.score
-        #    self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
-        #    with open(path.join(self.dir,HS_FILE),'w')as f:
-        #        f.write(str(self.highscore))
-        # else:
-        #    self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
+        if self.score > self.highscore:
+            self.highscore= self.score
+            self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
+            with open(path.join(self.dir,HS_FILE),'w')as f:
+                 f.write(str(self.highscore))
+        else:
+            self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
         pg.display.flip()
+        self.reset()
         self.wait_for_key()
-        # pg.mixer.music.fadeout(500)
+        pg.mixer.music.fadeout(500)
 
     def show_win_screen(self):
+
         # game over screen
-        # pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
-        # pg.mixer.music.play(loops=-1)
+        pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
+        pg.mixer.music.play(loops=-1)
         self.screen.fill(BGCOLOR)
-        self.draw_text("Congratualtion You Won", 48, RED, WIDTH / 2, HEIGHT / 4)
+        self.draw_text("Congratualtions You Won", 48, RED, WIDTH / 2, HEIGHT / 4)
         self.draw_text(" Your Score was: "+ str(self.score), 22, RED, WIDTH / 2, HEIGHT / 2)
-        self.draw_text('press a key to play again', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
-        # if self.score > self.highscore:
-        #   self.highscore= self.score
-        #    self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
-        #    with open(path.join(self.dir,HS_FILE),'w')as f:
-        #        f.write(str(self.highscore))
-        # else:
-        #    self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
+        self.draw_text('press a key to exit', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
+        if self.score > self.highscore:
+            self.highscore= self.score
+            self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
+            with open(path.join(self.dir,HS_FILE),'w')as f:
+                f.write(str(self.highscore))
+        else:
+            self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
         pg.display.flip()
         self.wait_for_key()
-        # pg.mixer.music.fadeout(500)
+        pg.mixer.music.fadeout(500)
+        self.running=False
+        self.playing= False
+        pg.quit()
+
 
     def wait_for_key(self):
         waiting = True
@@ -264,9 +266,24 @@ class Game:
                     waiting = False
                     self.running = False
                 if event.type == pg.KEYUP:
+                    self.map=0
                     if event.key==pg.K_2:
                         self.map=1
                     waiting = False
+
+    def reset(self):
+        self.player.kill()
+        self.endpoint.kill()
+        for bullet in self.projectiles:
+            bullet.kill()
+        for mob in self.mobs:
+            mob.kill()
+        for powerup in self.powerups:
+            powerup.kill()
+        for plat in self.platforms:
+            plat.kill()
+        self.board(self.map)
+
 
     def draw_text(self,text,size,color,x,y):
         font = pg.font.Font(self.font_name,size)

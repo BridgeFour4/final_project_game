@@ -56,10 +56,12 @@ class Player(pg.sprite.Sprite):
         hits = pg.sprite.spritecollide(self, self.game.platforms, False)
         self.rect.x -= 2
         if hits and not self.jumping:
+            self.game.jumpsound.play()
             self.jumping = True
             self.vel.y = -PLAYER_JUMP
 
     def shoot(self):
+        self.game.shootsound.play()
         Lightning(self.game,self)
 
     def teleport(self,x,y):
@@ -67,7 +69,8 @@ class Player(pg.sprite.Sprite):
         self.pos.y = y
 
     def hurt(self):
-         self.hit =5*FPS
+        self.game.hurtsound.play()
+        self.hit =5*FPS
 
 class Platform(pg.sprite.Sprite):
     def __init__(self,game,x,y,spawn=0):
@@ -88,23 +91,6 @@ class Platform(pg.sprite.Sprite):
         if spawn ==MOB_SPAWN:
             Mob(self.game,self)
 
-
-class Backwall(pg.sprite.Sprite):
-    def __init__(self,game,x,y):
-        self._layer = PLATFORM_LAYER
-        self.groups = game.all_sprites, game.backboard
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.image = pg.Surface((200,480))
-        self.image.fill(RED)
-        #self.image.set_colorkey(BLACK)
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        #if randrange(100) < POW_SPAWN:
-        #    Pow(self.game,self)
-        #if randrange(100) < MOB_SPAWN:
-        #    Pow(self.game,self)
 
 class Lightning(pg.sprite.Sprite):
     def __init__(self,game,player):

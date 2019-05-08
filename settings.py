@@ -3,6 +3,7 @@ WIDTH = 1000 # width of game window
 HEIGHT = 480 # height of screen
 FPS = 60 # frames
 FONT_NAME = 'arial'
+HS_FILE= "highscore.txt"
 
 #player properties
 PLAYER_ACC = 0.5
@@ -52,39 +53,39 @@ PLATFORM_LIST1=[(0,HEIGHT-50),
 
 PLATFORM_LIST2=[(0,HEIGHT-50),
                 (200, 400),
-                (400, 400),
-                (650, 380),
+                (400, 400,POINT_SPAWN),
+                (650, 380,LIFE_SPAWN),
                 (950, 330),
-                (1150, 440),
+                (1150, 440,POINT_SPAWN),
                 (1350, 440),
-                (1550, 400),
-                (1850, 380),
-                (2000, 330),
-                (2200, 330),
-                (2500, 400),
+                (1550, 400,POINT_SPAWN),
+                (1850, 380,POINT_SPAWN),
+                (2000, 330,MOB_SPAWN),
+                (2200, 330,MOB_SPAWN),
+                (2500, 400,MOB_SPAWN),
                 (2800, 400),
-                (3000, 380),
+                (3000, 380,LIFE_SPAWN),
                 (3150, 330),
                 (3300, 440),
-                (3500, 440),
+                (3500, 440,MOB_SPAWN),
                 (3650, 400),
                 (3800, 380),
-                (4100, 330),
-                (4300, 330),
+                (4100, 330,POINT_SPAWN),
+                (4300, 330,POINT_SPAWN),
                 (4600, 350),
-                (4800, 350),
+                (4800, 350,MOB_SPAWN),
                 (5000, 400),
-                (5300, 400),
-                (5500, 370),
-                (5700, 440),
-                (5850, 350),
+                (5300, 400,POINT_SPAWN),
+                (5500, 370,LIFE_SPAWN),
+                (5700, 440,MOB_SPAWN),
+                (5850, 350,POINT_SPAWN),
                 (6000, 350),
-                (6200, 400),
+                (6200, 400,POINT_SPAWN),
                 (6400, 400),
-                (6700, 370),
+                (6700, 370,MOB_SPAWN),
                 (7000, 440),
-                (7200, 370),
-                (7300, 440)]
+                (7200, 370,MOB_SPAWN),
+                (7300, 440,MOB_SPAWN)]
 
 ENDPOINT_LIST = [(5000,380),
                  (7500,380)]
