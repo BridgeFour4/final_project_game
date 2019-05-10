@@ -21,6 +21,7 @@ class Game:
         self.font_name = pg.font.match_font(FONT_NAME)
         self.map = 0
         self.first_hit = 0
+        self.move_forward=0
         self.load_data()
 
     def load_data(self):
@@ -33,7 +34,12 @@ class Game:
                 self.highscore = int(f.read())
             except:
                 self.highscore = 0
-        # load sritesheet
+        # load sritesheet and images
+        self.lightning_image = pg.image.load(path.join(img_dir, "Lightning.png"))
+        self.Hurt_image = pg.image.load(path.join(img_dir, "Hurt.png"))
+        self.teleport1_image = pg.image.load(path.join(img_dir, "teleport1.png"))
+        self.teleport2_image= pg.image.load(path.join(img_dir, "teleport2.png"))
+        self.endpoint_image = pg.image.load(path.join(img_dir, "endpoint.png"))
         # load_sound
         self.jumpsound = pg.mixer.Sound(path.join(self.snd_dir, 'Jump.wav'))
         self.coinsound = pg.mixer.Sound(path.join(self.snd_dir, 'Coin.wav'))
@@ -55,12 +61,14 @@ class Game:
         self.projectiles= pg.sprite.Group()
         self.endpoints = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
+        self.efx= pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.board(self.map)
         self.run()
 
     def board(self,run):
         self.first_hit = 0
+        self.move_forward=0
         self.player = Player(self)
         if run == 0:
             for plat in PLATFORM_LIST1:
@@ -71,7 +79,6 @@ class Game:
                 Platform(self, *plat)
                 self.endpoint = Endpoint(self, *ENDPOINT_LIST[run])
         if run >=len(ENDPOINT_LIST):
-            self.show_win_screen()
             self.playing = False
 
 
@@ -133,10 +140,10 @@ class Game:
                 self.lives-=1
                 self.player.hurt()
 
-            if self.lives<0:
+            if self.lives<=0:
                 self.playing = False
 
-        #checks to see if player hit powerup and what type
+        # checks to see if player hit powerup and what type
         hits = pg.sprite.spritecollide(self.player,self.powerups,True)
         for hit in hits:
             if hit.type ==LIFE_SPAWN:
@@ -147,6 +154,21 @@ class Game:
             if hit.type == POINT_SPAWN:
                 self.coinsound.play()
                 self.score+=100
+
+        # constantly scroll the screen to force player forward
+        if self.move_forward==1:
+            self.player.pos.x -= 2
+            self.endpoint.rect.x -= 2
+            for powerup in self.powerups:
+                powerup.rect.x -= 2
+            for bullet in self.projectiles:
+                bullet.rect.x -= 2
+            for mob in self.mobs:
+                mob.rect.x -= 2
+            for plat in self.platforms:
+                plat.rect.x -= 2
+            for efx in self.efx:
+                efx.rect.x -= 2
 
 
         # if player reaches right side of screen scroll over the screen
@@ -161,12 +183,14 @@ class Game:
                 mob.rect.x -=max(abs(self.player.vel.x),2)
             for plat in self.platforms:
                 plat.rect.x -=max(abs(self.player.vel.x),2)
+            for efx in self.efx:
+                efx.rect.x -= max(abs(self.player.vel.x), 2)
 
-        # if we fall off the bottom
-        if self.player.rect.bottom > HEIGHT:
+        # if we fall off the bottom or off the left
+        if self.player.rect.bottom > HEIGHT or self.player.rect.right<0:
             if self.first_hit == 0:
                 self.lives -= 1
-            if self.lives >= 0:
+            if self.lives > 0:
                 self.reset()
             else:
                 self.playing=False
@@ -183,6 +207,7 @@ class Game:
                 self.running = False
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_UP:
+                    self.move_forward=1
                     self.player.jump()
                 if event.key == pg.K_SPACE:
                     self.player.shoot()
@@ -214,7 +239,6 @@ class Game:
         pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
         pg.mixer.music.play(loops=-1)
         if not self.running or self.map >=len(ENDPOINT_LIST):
-            self.map=0
             return
         self.map = 0
         self.screen.fill(BGCOLOR)
@@ -235,13 +259,16 @@ class Game:
 
     def show_win_screen(self):
 
+        if not self.running or self.map < len(ENDPOINT_LIST):
+            return
         # game over screen
+        self.map=0
         pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
         pg.mixer.music.play(loops=-1)
         self.screen.fill(BGCOLOR)
         self.draw_text("Congratualtions You Won", 48, RED, WIDTH / 2, HEIGHT / 4)
         self.draw_text(" Your Score was: "+ str(self.score), 22, RED, WIDTH / 2, HEIGHT / 2)
-        self.draw_text('press a key to exit', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
+        self.draw_text('press a key to Replay', 22, RED, WIDTH / 2, HEIGHT * 3 / 4)
         if self.score > self.highscore:
             self.highscore= self.score
             self.draw_text("NEW HIGH SCORE! ", 22, GREEN, WIDTH / 2, HEIGHT / 2+40)
@@ -250,11 +277,11 @@ class Game:
         else:
             self.draw_text('High Score: ' + str(self.highscore), 22, WHITE, WIDTH / 2, HEIGHT / 2+40)
         pg.display.flip()
+        self.reset()
         self.wait_for_key()
         pg.mixer.music.fadeout(500)
-        self.running=False
-        self.playing= False
-        pg.quit()
+
+
 
 
     def wait_for_key(self):
@@ -266,9 +293,9 @@ class Game:
                     waiting = False
                     self.running = False
                 if event.type == pg.KEYUP:
-                    self.map=0
-                    if event.key==pg.K_2:
-                        self.map=1
+                    self.map = 0
+                    if event.key == pg.K_2:
+                        self.map = 1
                     waiting = False
 
     def reset(self):
@@ -282,15 +309,16 @@ class Game:
             powerup.kill()
         for plat in self.platforms:
             plat.kill()
+        for efx in self.efx:
+            efx.kill()
         self.board(self.map)
 
-
-    def draw_text(self,text,size,color,x,y):
-        font = pg.font.Font(self.font_name,size)
+    def draw_text(self, text, size, color, x, y):
+        font = pg.font.Font(self.font_name, size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
-        text_rect.midtop = (x,y)
-        self.screen.blit(text_surface,text_rect)
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
 
 
 g = Game()
@@ -298,4 +326,5 @@ g.show_start_screen()
 while g.running:
     g.new()
     g.show_go_screen()
+    g.show_win_screen()
 pg.quit()

@@ -4,6 +4,18 @@ from random import choice, randrange
 vec=pg.math.Vector2
 
 
+class Spritesheet:
+    #utility class for loading and parsing spritesheets
+    def __init__(self,filename):
+        self.spritesheet = pg.image.load(filename).convert()
+
+    def get_image(self, x, y , width, height):
+        # grab image out of a larger spritesheet
+            image = pg.Surface((width,height))
+            image.blit(self.spritesheet, (0,0),(x,y,width,height))
+            image = pg.transform.scale(image,(width//2,height//2))
+            return image
+
 
 class Player(pg.sprite.Sprite):
     def __init__(self,game):
@@ -14,7 +26,7 @@ class Player(pg.sprite.Sprite):
         self.walking =False
         self.current_frame = 0
         self.last_update = 0
-        #self.load_images()
+        # self.load_images()
         self.image = pg.Surface((30,30))
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
@@ -39,11 +51,6 @@ class Player(pg.sprite.Sprite):
         if abs(self.vel.x) < 0.1:
             self.vel.x = 0
         self.pos += self.vel + 0.5 * self.acc
-        # wrap around sides of screen
-        if self.pos.x > WIDTH + self.rect.width / 2:
-            self.pos.x = 0 - self.rect.width / 2
-        if self.pos.x < 0 - self.rect.width / 2:
-            self.pos.x = WIDTH + self.rect.width / 2
 
         self.rect.midbottom = self.pos
 
@@ -65,10 +72,13 @@ class Player(pg.sprite.Sprite):
         Lightning(self.game,self)
 
     def teleport(self,x,y):
+        Flash(game=self.game, x=self.pos.x-50, y=self.pos.y-50,image=self.game.teleport2_image)
         self.pos.x = x
         self.pos.y = y
+        Flash(game=self.game, x=self.pos.x-50, y=self.pos.y-50, image=self.game.teleport1_image)
 
     def hurt(self):
+        Flash(game=self.game, x=self.pos.x-50, y=self.pos.y-50, image=self.game.Hurt_image)
         self.game.hurtsound.play()
         self.hit =5*FPS
 
@@ -93,14 +103,14 @@ class Platform(pg.sprite.Sprite):
 
 
 class Lightning(pg.sprite.Sprite):
-    def __init__(self,game,player):
+    def __init__(self, game, player):
         self.layer = PLAYER_LAYER
         self.groups = game.all_sprites, game.projectiles
         pg.sprite.Sprite.__init__(self,self.groups)
         self.game = game
         self.player = player
-        self.image = pg.Surface((10,10))
-        self.image.fill(GREEN)
+        self.image = game.lightning_image
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = self.player.rect.x
         self.rect.y = self.player.rect.y
@@ -120,11 +130,30 @@ class Endpoint(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.endpoints
         pg.sprite.Sprite.__init__(self,self.groups)
         self.game = game
-        self.image = pg.Surface((50, 50))
-        self.image.fill(BLUE)
+        self.image_orig = game.endpoint_image
+        self.image = self.image_orig.copy()
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.rot = 0
+        self.rot_speed = 4
+        self.last_update = pg.time.get_ticks()
+
+    def update(self):
+        self.rotate()
+
+    def rotate(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update > 50:
+            self.last_update = now
+            # do rotation here)
+            self.rot = (self.rot + self.rot_speed) % 360
+            new_image = pg.transform.rotate(self.image_orig, self.rot)
+            old_center = self.rect.center
+            self.image = new_image
+            self.rect = self.image.get_rect()
+            self.rect.center = old_center
 
 
 class Mob(pg.sprite.Sprite):
@@ -168,4 +197,21 @@ class Pow(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.plat.rect.left + ((self.plat.rect.right - self.plat.rect.left) / 2)
         self.rect.bottom = self.plat.rect.top
+
+
+class Flash(pg.sprite.Sprite):
+    def __init__(self, game, image, x, y):
+        self.layer = EFX_LAYER
+        self.groups = game.all_sprites, game.efx
+        pg.sprite.Sprite.__init__(self,self.groups)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.lifetime = 10
+
+    def update(self):
+        self.lifetime -= 1
+        if self.lifetime <= 0:
+            self.kill()
 
