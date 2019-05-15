@@ -1,5 +1,6 @@
 # happy flute by Tomasz Kucza / magory.games / based on piermic's Improvisation with Sopranino recorder
 #Yippee by http://opengameart.org/users/snabisk
+# coin and platform art by kenny.nl
 
 import pygame as pg
 import random
