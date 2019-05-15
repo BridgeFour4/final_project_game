@@ -24,6 +24,7 @@ class Game:
         self.move_forward=0
         self.load_data()
 
+
     def load_data(self):
         self.dir = path.dirname(__file__)
         img_dir = path.join(self.dir, 'img')
@@ -35,11 +36,24 @@ class Game:
             except:
                 self.highscore = 0
         # load sritesheet and images
+        self.background = pg.image.load(path.join(img_dir,"background.png"))
+        self.background_rect= self.background.get_rect()
+        self.spritesheet = Spritesheet(path.join(img_dir, SPRITESHEET))
         self.lightning_image = pg.image.load(path.join(img_dir, "Lightning.png"))
         self.Hurt_image = pg.image.load(path.join(img_dir, "Hurt.png"))
         self.teleport1_image = pg.image.load(path.join(img_dir, "teleport1.png"))
         self.teleport2_image= pg.image.load(path.join(img_dir, "teleport2.png"))
         self.endpoint_image = pg.image.load(path.join(img_dir, "endpoint.png"))
+
+        self.walking1_image = pg.image.load(path.join(img_dir, "walking1.png"))
+        self.walking2_image = pg.image.load(path.join(img_dir, "walking2.png"))
+        self.walking3_image = pg.image.load(path.join(img_dir, "walking3.png"))
+        self.standing_image = pg.image.load(path.join(img_dir, "standing_frames.png"))
+        self.casting_image = pg.image.load(path.join(img_dir, "casting (2).png"))
+
+        self.platform_image = pg.image.load(path.join(img_dir,"platform.png"))
+        self.coin_image = pg.image.load(path.join(img_dir,"coin.png"))
+        self.one_up_image= pg.image.load(path.join(img_dir,"life.png"))
         # load_sound
         self.jumpsound = pg.mixer.Sound(path.join(self.snd_dir, 'Jump.wav'))
         self.coinsound = pg.mixer.Sound(path.join(self.snd_dir, 'Coin.wav'))
@@ -57,8 +71,8 @@ class Game:
         self.lives = 3
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.platforms = pg.sprite.Group()
-        self.backboard= pg.sprite.Group()
         self.projectiles= pg.sprite.Group()
+        self.backboard = pg.sprite.Group()
         self.endpoints = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
         self.efx= pg.sprite.Group()
@@ -210,11 +224,13 @@ class Game:
                     self.move_forward=1
                     self.player.jump()
                 if event.key == pg.K_SPACE:
+                    self.player.casting=True
                     self.player.shoot()
 
     def draw(self):
         # game loop draw
         self.screen.fill(BGCOLOR)
+        self.screen.blit(self.background,self.background_rect)
         self.all_sprites.draw(self.screen)
         self.draw_text(str(self.score),22,WHITE,WIDTH / 4, 15)
         self.draw_text(str(self.lives), 22, WHITE, WIDTH * 3/4, 15)

@@ -24,11 +24,11 @@ class Player(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self,self.groups)
         self.game=game
         self.walking =False
+        self.casting = False
         self.current_frame = 0
         self.last_update = 0
-        # self.load_images()
-        self.image = pg.Surface((30,30))
-        self.image.fill(YELLOW)
+        self.load_images()
+        self.image = self.standing_frame
         self.rect = self.image.get_rect()
         self.rect.center = (40, HEIGHT-100)
         self.pos = vec(40, HEIGHT-100)
@@ -36,7 +36,21 @@ class Player(pg.sprite.Sprite):
         self.acc = vec(0,0)
         self.hit =0
 
+    def load_images(self):
+        self.standing_frame = self.game.standing_image
+        self.standing_frame.set_colorkey(WHITE)
+        self.walking_frames_right = [self.game.walking1_image,
+                                     self.game.walking2_image,
+                                     self.game.walking3_image]
+        self.walking_frames_left = []
+        for frame in self.walking_frames_right:
+            frame.set_colorkey(WHITE)
+            self.walking_frames_left.append(pg.transform.flip(frame, True, False))
+        self.cast_frame = self.game.casting_image
+        self.cast_frame.set_colorkey(WHITE)
+
     def update(self):
+        self.animate()
         self.acc = vec(0, PLAYER_GRAV)
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT]:
@@ -57,6 +71,42 @@ class Player(pg.sprite.Sprite):
         if self.hit >0:
             self.hit -=1
 
+    def animate(self):
+        now = pg.time.get_ticks()
+        if self.vel.x != 0:
+            self.walking = True
+        else:
+            self.walking = False
+
+        if self.casting:
+            if now - self.last_update > 200:
+                self.last_update = now
+                bottom = self.rect.bottom
+                self.image = self.cast_frame
+                self.rect = self.image.get_rect()
+                self.rect.bottom = bottom
+        elif self.walking:
+            if now - self.last_update > 200:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.walking_frames_right)
+                bottom = self.rect.bottom
+                if self.vel.x > 0:
+                    self.image = self.walking_frames_right[self.current_frame]
+                else:
+                    self.image = self.walking_frames_left[self.current_frame]
+                self.rect = self.image.get_rect()
+                self.rect.bottom = bottom
+        else:
+            if now - self.last_update > 200:
+                self.last_update = now
+                bottom = self.rect.bottom
+                self.image = self.standing_frame
+                self.rect = self.image.get_rect()
+                self.rect.bottom = bottom
+
+
+
+
     def jump(self):
         # jump only if standing on platform
         self.rect.x += 2
@@ -71,7 +121,9 @@ class Player(pg.sprite.Sprite):
         self.game.shootsound.play()
         Lightning(self.game,self)
 
+
     def teleport(self,x,y):
+        self.casting = False
         Flash(game=self.game, x=self.pos.x-50, y=self.pos.y-50,image=self.game.teleport2_image)
         self.pos.x = x
         self.pos.y = y
@@ -88,8 +140,7 @@ class Platform(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.platforms
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((100,20))
-        self.image.fill(RED)
+        self.image = game.platform_image
         #self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -189,11 +240,10 @@ class Pow(pg.sprite.Sprite):
         self.plat = plat
         self.type = type
         if self.type == LIFE_SPAWN:
-            self.image = pg.Surface((20,20))
-            self.image.fill(BLUE)
+            self.image = game.one_up_image
         elif self.type == POINT_SPAWN:
-            self.image = pg.Surface((10,10))
-            self.image.fill(GREEN)
+            self.image = game.coin_image
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = self.plat.rect.left + ((self.plat.rect.right - self.plat.rect.left) / 2)
         self.rect.bottom = self.plat.rect.top
